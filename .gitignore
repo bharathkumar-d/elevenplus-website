@@ -1,0 +1,34 @@
+# Environment — contains real passwords, never commit
+.env
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+client/build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Uploads — PDFs are licensed/copyrighted; diagrams are extracted from them
+uploads/papers/
+uploads/diagrams/
+
+# AI prompt files — generated locally, not part of source
+server/ai-prompts/
+
+# PM2 runtime state
+.pm2/
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+*.swp
+*.swo

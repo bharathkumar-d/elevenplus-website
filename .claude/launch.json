@@ -1,0 +1,18 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "elevenplus",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "set NODE_ENV=production&& node server/src/index.js"],
+      "port": 5000,
+      "autoPort": true
+    },
+    {
+      "name": "foundry-estimator",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "C:\\Bharath\\AI\\Code\\foundry-estimator", "--", "--port", "5173", "--strictPort"],
+      "port": 5173
+    }
+  ]
+}
