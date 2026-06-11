@@ -23,6 +23,11 @@ server/ai-prompts/
 # PM2 runtime state
 .pm2/
 
+# Database dumps — contain real data, never commit
+*.dump
+*.sql.gz
+*.backup
+
 # OS files
 .DS_Store
 Thumbs.db
