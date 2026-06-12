@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/elevenplus-website/static/css/main.8dd23627.css",
+    "main.js": "/elevenplus-website/static/js/main.f8f0bf05.js",
+    "index.html": "/elevenplus-website/index.html",
+    "main.8dd23627.css.map": "/elevenplus-website/static/css/main.8dd23627.css.map",
+    "main.f8f0bf05.js.map": "/elevenplus-website/static/js/main.f8f0bf05.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.8dd23627.css",
+    "static/js/main.f8f0bf05.js"
+  ]
+}
