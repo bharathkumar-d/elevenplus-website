@@ -4,6 +4,7 @@ import api from '../../api/client';
 import Modal from '../../components/Modal';
 import Badge from '../../components/Badge';
 import groupQuestionsByPassage from '../../utils/groupQuestionsByPassage';
+import DiagramEditor from '../../components/DiagramEditor';
 
 const EMPTY_Q = { questionText: '', questionType: 'mcq', marks: 1, hint: '', explanation: '', options: [
   { optionLabel: 'A', optionText: '', isCorrect: false },
@@ -65,6 +66,10 @@ export default function AdminQuestions() {
   const [showImageBank, setShowImageBank] = useState(false);
   const [imageBankImages, setImageBankImages] = useState([]);
   const [imageBankTarget, setImageBankTarget] = useState(null); // question id
+
+  // Diagram editor
+  const [showDiagramEditor, setShowDiagramEditor] = useState(false);
+  const [diagramEditorTarget, setDiagramEditorTarget] = useState(null); // question id or null (save to bank only)
 
   // AI answer helper — bulk (during PDF extraction, clipboard-based)
   const [showAiHelper, setShowAiHelper] = useState(false);
@@ -437,6 +442,23 @@ For MCQ, exactly one option must have isCorrect true.`;
     updateExtractedQ(qIdx, 'imageUrl', null);
   };
 
+  // Diagram editor handlers
+  const openDiagramEditor = (questionId) => {
+    setDiagramEditorTarget(questionId || null);
+    setShowDiagramEditor(true);
+  };
+
+  const handleDiagramSave = async (imageUrl, saveOnly) => {
+    if (!saveOnly && diagramEditorTarget) {
+      await api.patch(`/questions/${diagramEditorTarget}`, { imageUrl });
+      loadQuestions();
+    }
+    // Add to image bank list so it appears immediately without re-fetch
+    setImageBankImages(prev => [{ imageUrl, filename: imageUrl.split('/').pop() }, ...prev]);
+    setShowDiagramEditor(false);
+    setDiagramEditorTarget(null);
+  };
+
   // On saved questions: open modal with images from tmp folder
   const openImageBankForQuestion = async (questionId) => {
     // Fetch list of available images from server
@@ -663,8 +685,10 @@ For MCQ, exactly one option must have isCorrect true.`;
                             <button onClick={() => openSingleAiHelper(q)}
                               className="px-2 py-1 text-xs font-bold bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-lg transition-colors" title="Ask Claude for correct answer">🤖</button>
                           )}
+                          <button onClick={() => openDiagramEditor(q.id)}
+                            className="px-2 py-1 text-xs font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg transition-colors" title="Create diagram">✏️🖼️</button>
                           <button onClick={() => openImageBankForQuestion(q.id)}
-                            className="px-2 py-1 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-colors" title="Assign diagram image">🖼️</button>
+                            className="px-2 py-1 text-xs font-bold bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg transition-colors" title="Assign diagram from bank">🖼️</button>
                           <button onClick={() => openEditQuestion(q)}
                             className="px-2 py-1 text-xs font-bold bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors" title="Edit question">✏️</button>
                           <button onClick={() => deleteQuestion(q.id)}
@@ -1109,6 +1133,19 @@ For MCQ, exactly one option must have isCorrect true.`;
           </div>
         </div>
       </Modal>
+
+      {/* Diagram Editor — full-screen overlay */}
+      {showDiagramEditor && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ width: '100%', maxWidth: 1040, height: '90vh', borderRadius: 12, overflow: 'hidden', boxShadow: '0 25px 60px rgba(0,0,0,0.35)' }}>
+            <DiagramEditor
+              questionId={diagramEditorTarget}
+              onSave={handleDiagramSave}
+              onClose={() => { setShowDiagramEditor(false); setDiagramEditorTarget(null); }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Single-question AI Answer Modal */}
       <Modal open={showSingleAi} onClose={() => setShowSingleAi(false)} title="🤖 Ask Claude for the Correct Answer" wide>
