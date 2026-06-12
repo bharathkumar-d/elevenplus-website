@@ -11,13 +11,24 @@ const questionRoutes = require('./routes/questions');
 const attemptRoutes = require('./routes/attempts');
 const markingRoutes = require('./routes/marking');
 const passageRoutes = require('./routes/passages');
+const diagramRoutes = require('./routes/diagrams');
 
 const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
 
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_URL,                                     // local dev
+  'https://bharathkumar-d.github.io',                        // GitHub Pages
+  process.env.EXTRA_ORIGIN,                                   // custom domain if needed
+].filter(Boolean);
+
 app.use(cors({
-  origin: isProd ? false : process.env.CLIENT_URL,
+  origin: (origin, cb) => {
+    // allow server-to-server (no origin) and any whitelisted origin
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json());
@@ -37,6 +48,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/attempts', attemptRoutes);
 app.use('/api/marking', markingRoutes);
 app.use('/api/passages', passageRoutes);
+app.use('/api/diagrams', diagramRoutes);
 
 // Public reference data (exam types, schools, subjects) — any authenticated user
 const pool = require('./db/pool');

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import api, { API_BASE } from '../../api/client';
 
 const GRADE_COLOURS = {
   'A+': 'text-green-600', A: 'text-green-500', B: 'text-blue-500',
@@ -152,7 +152,7 @@ export default function StudentResults() {
                   <div className="flex-1">
                     <p className="font-bold text-slate-500 text-xs mb-1">Question {i + 1}</p>
                     {a.image_url && (
-                      <img src={`http://localhost:5000${a.image_url}`} alt="diagram"
+                      <img src={`${API_BASE}${a.image_url}`} alt="diagram"
                         className="mb-2 max-h-32 rounded-xl border border-slate-200 bg-white object-contain" />
                     )}
                     <p className="font-bold text-slate-800">{a.question_text}</p>

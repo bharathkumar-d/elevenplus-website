@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api' });
+// In production (GitHub Pages) REACT_APP_API_URL points to the Cloudflare tunnel.
+// In development the React dev server proxies /api to localhost:5000.
+export const API_BASE = process.env.REACT_APP_API_URL || '';
+
+const api = axios.create({ baseURL: `${API_BASE}/api` });
 
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('token');

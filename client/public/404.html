@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>11+ Website</title>
+  <script>
+    // GitHub Pages SPA redirect: store the path in sessionStorage, then redirect to index.html
+    // which reads it back and uses history.replaceState to restore the URL.
+    var path = window.location.pathname;
+    var base = '/elevenplus-website';
+    var rest = path.startsWith(base) ? path.slice(base.length) : path;
+    sessionStorage.setItem('spa_redirect', rest + window.location.search + window.location.hash);
+    window.location.replace(base + '/');
+  </script>
+</head>
+<body></body>
+</html>
