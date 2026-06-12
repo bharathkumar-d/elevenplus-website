@@ -377,6 +377,62 @@ const TEMPLATE_CONFIGS = {
 
 // ─── Main Editor ─────────────────────────────────────────────────────────────
 
+// ─── AI prompt builder ────────────────────────────────────────────────────────
+
+const SHAPE_SCHEMA = `Canvas: ${CANVAS_W}×${CANVAS_H}px. Origin top-left.
+
+Return ONLY a JSON object — no markdown fences, no text before or after:
+{
+  "shapes": [
+    // one object per element on the canvas
+  ]
+}
+
+Each shape object must have an "id" (unique string) and "type", plus type-specific fields:
+
+line      : { points:[x1,y1,x2,y2,...], stroke, strokeWidth, closed?, fill?, dash?:[on,off] }
+arrow     : { points:[x1,y1,x2,y2], stroke, strokeWidth }
+rect      : { x, y, width, height, fill, stroke, strokeWidth, dash?:[on,off] }
+circle    : { x, y, radius, fill, stroke, strokeWidth }
+triangle  : { x, y, radius, sides:3, fill, stroke, strokeWidth }
+regularPolygon : { x, y, sides, radius, fill, stroke, strokeWidth }
+text      : { x, y, text, fontSize, fill, fontStyle?:"bold"|"italic"|"normal", width?, align?:"left"|"center"|"right" }
+
+Colour values: use hex strings e.g. "#1e293b". For no fill use "transparent".
+Keep strokes clean and exam-appropriate. Use "#1e293b" (near-black) for lines and text.
+Use "#6366f1" (indigo) sparingly for highlights or question-mark elements.
+Leave at least 30px margin on all sides.`;
+
+function buildAiPrompt(description) {
+  return `You are a diagram generator for UK 11+ exam questions (GL, CEM, FSCE formats). The diagrams are used on exam papers for children aged 9–11.
+
+${SHAPE_SCHEMA}
+
+Generate a clear, accurate diagram for the following description:
+"${description}"
+
+Rules:
+- Use only the shape types listed above.
+- Every shape must have a unique "id" string.
+- Position shapes so the diagram is well-centred and readable.
+- For number lines: draw a horizontal arrow, add tick marks with Line shapes, label with Text shapes.
+- For coordinate grids: draw x and y axis arrows, grid lines, tick labels.
+- For bar charts: draw axis Lines, Rect bars, Text labels on x-axis and above bars.
+- For clock faces: Circle for the clock, Line shapes for hands and tick marks, Text for numbers.
+- For labelled shapes: draw the shape, add Arrow shapes for dimension lines, Text for measurements.
+- Keep the diagram simple and uncluttered — this is a children's exam.`;
+}
+
+function parseAiResponse(raw) {
+  const cleaned = raw.trim().replace(/^```json?\s*/i, '').replace(/```\s*$/, '').trim();
+  const parsed = JSON.parse(cleaned);
+  if (!parsed.shapes || !Array.isArray(parsed.shapes)) throw new Error('Response must have a "shapes" array');
+  // Ensure every shape has a unique id
+  return parsed.shapes.map((s, i) => ({ ...s, id: s.id || uid() + i }));
+}
+
+// ─── Main Editor ─────────────────────────────────────────────────────────────
+
 export default function DiagramEditor({ onSave, onClose, questionId }) {
   const [shapes, setShapes] = useState([]);
   const [tool, setTool] = useState('select');
@@ -392,6 +448,14 @@ export default function DiagramEditor({ onSave, onClose, questionId }) {
   const [drawing, setDrawing] = useState(null); // { startX, startY }
   const stageRef = useRef();
 
+  // AI natural language state
+  const [showAiPanel, setShowAiPanel] = useState(false);
+  const [aiDescription, setAiDescription] = useState('');
+  const [aiPromptText, setAiPromptText] = useState('');   // generated prompt to copy
+  const [aiResponse, setAiResponse] = useState('');        // pasted response
+  const [aiCopied, setAiCopied] = useState(false);
+  const [aiError, setAiError] = useState('');
+
   // Save to undo stack before any mutation
   const push = useCallback(newShapes => {
     setUndoStack(prev => [...prev.slice(-MAX_UNDO), shapes]);
@@ -404,6 +468,34 @@ export default function DiagramEditor({ onSave, onClose, questionId }) {
     setShapes(undoStack[undoStack.length - 1]);
     setUndoStack(prev => prev.slice(0, -1));
   }, [undoStack]);
+
+  const generateAiPrompt = useCallback(() => {
+    if (!aiDescription.trim()) return;
+    setAiPromptText(buildAiPrompt(aiDescription.trim()));
+    setAiResponse('');
+    setAiError('');
+  }, [aiDescription]);
+
+  const copyAiPrompt = useCallback(() => {
+    navigator.clipboard.writeText(aiPromptText).then(() => {
+      setAiCopied(true);
+      setTimeout(() => setAiCopied(false), 2500);
+    });
+  }, [aiPromptText]);
+
+  const applyAiResponse = useCallback(() => {
+    setAiError('');
+    try {
+      const newShapes = parseAiResponse(aiResponse);
+      push([...shapes, ...newShapes]);
+      setAiResponse('');
+      setAiPromptText('');
+      setAiDescription('');
+      setShowAiPanel(false);
+    } catch (err) {
+      setAiError('Could not parse response — make sure you pasted valid JSON. ' + err.message);
+    }
+  }, [aiResponse, shapes, push]);
 
   useEffect(() => {
     const handler = e => { if ((e.ctrlKey || e.metaKey) && e.key === 'z') undo(); };
@@ -529,6 +621,11 @@ export default function DiagramEditor({ onSave, onClose, questionId }) {
 
         <div style={{ flex: 1 }} />
 
+        <button onClick={() => { setShowAiPanel(p => !p); setActiveTpl(null); }}
+          style={{ fontSize: 12, padding: '5px 12px', borderRadius: 6, border: '1px solid #e2e8f0', background: showAiPanel ? '#ede9fe' : '#fff', color: showAiPanel ? '#5b21b6' : '#475569', cursor: 'pointer', fontWeight: 600 }}>
+          ✨ AI
+        </button>
+        <div style={{ width: 1, height: 20, background: '#e2e8f0' }} />
         <label style={{ fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
           <input type="checkbox" checked={snapEnabled} onChange={e => setSnapEnabled(e.target.checked)} /> Snap
         </label>
@@ -550,6 +647,62 @@ export default function DiagramEditor({ onSave, onClose, questionId }) {
             .tpl-cfg button { background: #6366f1; color: #fff; border: none; border-radius: 6px; padding: 5px 14px; font-size: 12px; cursor: pointer; font-weight: 600; }`}
           </style>
           <ActiveTplConfig onInsert={insertTemplate} />
+        </div>
+      )}
+
+      {/* ── AI natural language panel ── */}
+      {showAiPanel && (
+        <div style={{ padding: '12px 16px', borderBottom: '2px solid #e0e7ff', background: '#f5f3ff' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 280 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#5b21b6', marginBottom: 4 }}>
+                ✨ Describe your diagram in plain English
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  value={aiDescription}
+                  onChange={e => setAiDescription(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && generateAiPrompt()}
+                  placeholder='e.g. "a number line from 0 to 20 with a question mark at 15"'
+                  style={{ flex: 1, border: '1px solid #c4b5fd', borderRadius: 7, padding: '6px 10px', fontSize: 12, background: '#fff', color: '#1e293b', outline: 'none' }}
+                />
+                <button onClick={generateAiPrompt} disabled={!aiDescription.trim()}
+                  style={{ padding: '6px 14px', borderRadius: 7, border: 'none', background: '#6366f1', color: '#fff', fontSize: 12, fontWeight: 600, cursor: aiDescription.trim() ? 'pointer' : 'not-allowed', opacity: aiDescription.trim() ? 1 : 0.5 }}>
+                  Generate prompt
+                </button>
+              </div>
+            </div>
+
+            {aiPromptText && (
+              <div style={{ flex: 2, minWidth: 320, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#5b21b6' }}>Step 1 — Copy and paste into claude.ai</span>
+                  <button onClick={copyAiPrompt}
+                    style={{ fontSize: 11, padding: '3px 10px', borderRadius: 5, border: 'none', background: aiCopied ? '#10b981' : '#6366f1', color: '#fff', cursor: 'pointer', fontWeight: 600, transition: 'background 0.2s' }}>
+                    {aiCopied ? '✓ Copied!' : 'Copy prompt'}
+                  </button>
+                </div>
+                <textarea readOnly value={aiPromptText} rows={3}
+                  style={{ width: '100%', fontSize: 11, fontFamily: 'monospace', background: '#fff', border: '1px solid #c4b5fd', borderRadius: 6, padding: '6px 8px', resize: 'none', color: '#475569' }} />
+
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#5b21b6', marginTop: 2 }}>Step 2 — Paste Claude's JSON response here</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <textarea
+                    value={aiResponse}
+                    onChange={e => { setAiResponse(e.target.value); setAiError(''); }}
+                    placeholder='Paste the JSON response from claude.ai…'
+                    rows={3}
+                    style={{ flex: 1, fontSize: 11, fontFamily: 'monospace', background: '#fff', border: '1px solid #c4b5fd', borderRadius: 6, padding: '6px 8px', resize: 'none', color: '#1e293b' }}
+                  />
+                  <button onClick={applyAiResponse} disabled={!aiResponse.trim()}
+                    style={{ alignSelf: 'flex-end', padding: '6px 14px', borderRadius: 7, border: 'none', background: '#10b981', color: '#fff', fontSize: 12, fontWeight: 600, cursor: aiResponse.trim() ? 'pointer' : 'not-allowed', opacity: aiResponse.trim() ? 1 : 0.5 }}>
+                    Apply to canvas
+                  </button>
+                </div>
+                {aiError && <div style={{ fontSize: 11, color: '#ef4444', background: '#fee2e2', borderRadius: 5, padding: '4px 8px' }}>{aiError}</div>}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
