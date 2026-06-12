@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../../api/client';
+import api, { API_BASE } from '../../api/client';
 
 const SUBJECT_COLOURS = {
   'maths':               { bg: 'bg-blue-50',   border: 'border-blue-200',   btn: 'bg-blue-500 hover:bg-blue-600' },
@@ -120,7 +120,7 @@ export default function StudentPapers() {
                     Start Practice! 🚀
                   </button>
                   {p.pdf_url && (
-                    <a href={`http://localhost:5000${p.pdf_url}`} target="_blank" rel="noreferrer"
+                    <a href={`${API_BASE}${p.pdf_url}`} target="_blank" rel="noreferrer"
                       className="text-center text-sm font-semibold text-slate-500 hover:text-brand-600 transition-colors">
                       📥 Download PDF version
                     </a>

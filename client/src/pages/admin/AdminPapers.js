@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import api, { API_BASE } from '../../api/client';
 import Modal from '../../components/Modal';
 import Badge from '../../components/Badge';
 
@@ -231,7 +231,7 @@ export default function AdminPapers() {
               <div className="flex items-center gap-2 mb-2 text-sm text-green-700 font-semibold bg-green-50 border border-green-200 rounded-xl px-3 py-2">
                 <span>📎</span>
                 <span>PDF already uploaded</span>
-                <a href={`http://localhost:5000${form.existingPdfUrl}`} target="_blank" rel="noreferrer"
+                <a href={`${API_BASE}${form.existingPdfUrl}`} target="_blank" rel="noreferrer"
                   className="underline text-green-600 ml-auto">View</a>
               </div>
             )}

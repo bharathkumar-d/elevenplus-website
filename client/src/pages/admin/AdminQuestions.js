@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import api from '../../api/client';
+import api, { API_BASE } from '../../api/client';
 import Modal from '../../components/Modal';
 import Badge from '../../components/Badge';
 import groupQuestionsByPassage from '../../utils/groupQuestionsByPassage';
@@ -660,9 +660,9 @@ For MCQ, exactly one option must have isCorrect true.`;
                           {/* Diagram thumbnail + assign/remove controls */}
                           {q.image_url ? (
                             <div className="mb-2 relative inline-block">
-                              <img src={`http://localhost:5000${q.image_url}`} alt="diagram"
+                              <img src={`${API_BASE}${q.image_url}`} alt="diagram"
                                 className="max-h-32 rounded-lg border border-amber-200 bg-white object-contain cursor-zoom-in"
-                                onClick={() => window.open(`http://localhost:5000${q.image_url}`, '_blank')} />
+                                onClick={() => window.open(`${API_BASE}${q.image_url}`, '_blank')} />
                               <button onClick={() => removeImageFromSavedQuestion(q.id)}
                                 className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center hover:bg-red-600"
                                 title="Remove image">✕</button>
@@ -974,7 +974,7 @@ For MCQ, exactly one option must have isCorrect true.`;
                     return (
                       <div key={ii} className="relative">
                         <img
-                          src={`http://localhost:5000${img.imageUrl}`}
+                          src={`${API_BASE}${img.imageUrl}`}
                           alt={`p${img.pageNum}`}
                           className={`h-24 rounded-xl border-2 bg-white object-contain cursor-pointer transition-all ${
                             isSelected ? 'border-amber-500 ring-2 ring-amber-400 scale-105 shadow-lg'
@@ -1032,9 +1032,9 @@ For MCQ, exactly one option must have isCorrect true.`;
                       {/* Diagram preview above question text */}
                       {q.imageUrl && (
                         <div className="relative inline-block" onClick={e => e.stopPropagation()}>
-                          <img src={`http://localhost:5000${q.imageUrl}`} alt="diagram"
+                          <img src={`${API_BASE}${q.imageUrl}`} alt="diagram"
                             className="max-h-32 rounded-xl border-2 border-amber-400 bg-white object-contain cursor-zoom-in"
-                            onClick={() => window.open(`http://localhost:5000${q.imageUrl}`, '_blank')} />
+                            onClick={() => window.open(`${API_BASE}${q.imageUrl}`, '_blank')} />
                           <button onClick={() => removeExtractQuestionImage(i)}
                             className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs font-bold flex items-center justify-center hover:bg-red-600"
                             title="Remove image">✕</button>
@@ -1119,7 +1119,7 @@ For MCQ, exactly one option must have isCorrect true.`;
             <div className="flex flex-wrap gap-3">
               {imageBankImages.map((img, i) => (
                 <div key={i} className="relative cursor-pointer group" onClick={() => assignImageToSavedQuestion(img.imageUrl)}>
-                  <img src={`http://localhost:5000${img.imageUrl}`} alt={img.filename}
+                  <img src={`${API_BASE}${img.imageUrl}`} alt={img.filename}
                     className="h-28 rounded-xl border-2 border-slate-200 bg-white object-contain group-hover:border-amber-400 group-hover:scale-105 transition-all" />
                   <div className="absolute inset-0 rounded-xl bg-amber-500/0 group-hover:bg-amber-500/10 transition-all flex items-end justify-center pb-1">
                     <span className="text-xs bg-black/60 text-white rounded px-1.5 py-0.5 opacity-0 group-hover:opacity-100 transition-opacity">Assign</span>

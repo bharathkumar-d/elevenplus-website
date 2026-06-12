@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import api from '../../api/client';
+import api, { API_BASE } from '../../api/client';
 
 function useTimer(limitMins, onExpire) {
   const [secondsLeft, setSecondsLeft] = useState(limitMins ? limitMins * 60 : null);
@@ -212,7 +212,7 @@ export default function StudentTest() {
           {q.image_url && (
             <div className="rounded-2xl overflow-hidden bg-slate-50 border border-slate-200">
               <img
-                src={`http://localhost:5000${q.image_url}`}
+                src={`${API_BASE}${q.image_url}`}
                 alt="Diagram"
                 className="w-full max-h-64 object-contain"
               />

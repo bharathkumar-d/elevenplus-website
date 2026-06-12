@@ -17,8 +17,18 @@ const app = express();
 
 const isProd = process.env.NODE_ENV === 'production';
 
+const ALLOWED_ORIGINS = [
+  process.env.CLIENT_URL,                                     // local dev
+  'https://bharathkumar-d.github.io',                        // GitHub Pages
+  process.env.EXTRA_ORIGIN,                                   // custom domain if needed
+].filter(Boolean);
+
 app.use(cors({
-  origin: isProd ? false : process.env.CLIENT_URL,
+  origin: (origin, cb) => {
+    // allow server-to-server (no origin) and any whitelisted origin
+    if (!origin || ALLOWED_ORIGINS.some(o => origin.startsWith(o))) return cb(null, true);
+    cb(new Error(`CORS: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json());
