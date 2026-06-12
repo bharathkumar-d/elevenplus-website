@@ -28,6 +28,8 @@ CREATE TABLE student_profiles (
   year_group      SMALLINT,           -- e.g. 5 or 6
   date_of_birth   DATE,
   avatar_emoji    VARCHAR(10) DEFAULT '⭐',
+  school_id       UUID REFERENCES schools(id),
+  exam_type_id    UUID REFERENCES exam_types(id),
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -94,16 +96,27 @@ CREATE TABLE papers (
 
 CREATE TYPE question_type AS ENUM ('mcq', 'free_text');
 
+CREATE TABLE passages (
+  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  paper_id    UUID NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
+  title       VARCHAR(255) NOT NULL DEFAULT 'Reading Passage',
+  content     TEXT NOT NULL,
+  order_index SMALLINT NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE questions (
   id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   paper_id        UUID NOT NULL REFERENCES papers(id) ON DELETE CASCADE,
+  passage_id      UUID REFERENCES passages(id) ON DELETE SET NULL,
   question_text   TEXT NOT NULL,
   question_type   question_type NOT NULL DEFAULT 'mcq',
   marks           SMALLINT NOT NULL DEFAULT 1,
   order_index     SMALLINT NOT NULL DEFAULT 0,
-  image_url       VARCHAR(500),         -- optional image for the question
-  hint            TEXT,                 -- optional hint shown to student
-  explanation     TEXT,                 -- shown after answer revealed
+  image_url       VARCHAR(500),
+  diagram_page    SMALLINT,
+  hint            TEXT,
+  explanation     TEXT,
   created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -207,7 +220,8 @@ ORDER BY att.submitted_at ASC;
 -- INDEXES
 -- ============================================================
 
-CREATE INDEX idx_papers_subject       ON papers(subject_id);
+CREATE INDEX idx_passages_paper        ON passages(paper_id);
+CREATE INDEX idx_papers_subject        ON papers(subject_id);
 CREATE INDEX idx_papers_exam_type     ON papers(exam_type_id);
 CREATE INDEX idx_papers_school        ON papers(school_id);
 CREATE INDEX idx_papers_status        ON papers(status);
